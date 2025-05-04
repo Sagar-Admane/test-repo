@@ -5,6 +5,10 @@ pipeline {
         nodejs 'node16' 
     }
 
+    trigger{
+        pollSCM '* * * * *'
+    }
+
     stages {
         stage('Clone Repo') {
             steps {
