@@ -1,25 +1,46 @@
-pipeline {
+pipeline{
     agent any
 
-    tools {
-        nodejs 'node16' 
+    environment{
+        DOCKER_IMAGE = 'my-node-app'
     }
 
-    trigger{
-        pollSCM '* * * * *'
-    }
-
-    stages {
-        stage('Clone Repo') {
-            steps {
+    stages{
+        stage('Clone repo'){
+            steps{
                 git 'https://github.com/Sagar-Admane/test-repo.git'
             }
         }
 
-        stage('Run Script') {
-            steps {
-                echo 'Running index.js...'
-                sh 'node index.js'
+        stage('Build docker image with docker compose'){
+            steps{
+                script{
+                    sh 'docker-compose build'
+                }
+            }
+        }
+
+        stage('Stop old container'){
+            steps{
+                script{
+                    sh 'docker-compose down'
+                }
+            }
+        }
+
+        stage('Start new container'){
+            steps{
+                script{
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+
+        stage('Clean docker images'){
+            steps{
+                script{
+                    sh 'docker image prune -f'
+                }
             }
         }
     }
