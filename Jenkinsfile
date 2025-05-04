@@ -1,33 +1,33 @@
 pipeline {
-    agent { label 'my-jenkins-agent' }
+    agent { label 'my-jenkins-agent' } // Your custom cloud agent
 
     environment {
-        DOCKER_IMAGE = 'sagar4094/my-node-app'
+        DOCKER_HOST = 'tcp://172.22.0.2:2375' // 👈 Connect to Docker daemon via TCP
+        DOCKER_IMAGE = 'sagar4094/my-node-app' // Docker Hub image name
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Clone Repository') {
             steps {
-                echo '📥 Cloning repo...'
+                echo '📥 Cloning the repository...'
                 git 'https://github.com/Sagar-Admane/test-repo.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo '🐳 Building Docker image from Dockerfile...'
+                echo '🐳 Building the Docker image...'
                 sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                echo '📤 Pushing to Docker Hub...'
+                echo '📤 Logging in & pushing to Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh """
                         echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
-                        docker tag $DOCKER_IMAGE:latest $DOCKER_IMAGE:latest
-                        docker push $DOCKER_IMAGE:latest
+                        docker push $DOCKER_IMAGE
                     """
                 }
             }
@@ -35,22 +35,22 @@ pipeline {
 
         stage('Stop Old Container') {
             steps {
-                echo '🛑 Stopping old container...'
-                sh 'docker ps -q --filter "name=my-node-app" | xargs -r docker stop'
-                sh 'docker ps -aq --filter "name=my-node-app" | xargs -r docker rm'
+                echo '🛑 Stopping existing container (if any)...'
+                sh 'docker stop my-node-app || true'
+                sh 'docker rm my-node-app || true'
             }
         }
 
-        stage('Start New Container') {
+        stage('Run New Container') {
             steps {
-                echo '🚀 Starting updated container...'
-                sh 'docker run -d --name my-node-app -p 80:80 $DOCKER_IMAGE'
+                echo '🚀 Running new container...'
+                sh 'docker run -d --name my-node-app -p 3000:3000 $DOCKER_IMAGE'
             }
         }
 
-        stage('Clean Up') {
+        stage('Clean Up Old Images') {
             steps {
-                echo '🧹 Cleaning unused images...'
+                echo '🧹 Cleaning up unused images...'
                 sh 'docker image prune -f'
             }
         }
