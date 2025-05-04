@@ -1,20 +1,17 @@
-pipeline{
+pipeline {
     agent any
+
+
     stages {
-        stage('Init'){
+        stage('Clone Repo') {
             steps {
-                echo 'pipline from github'
-            }
-        }
-        stage("Clone repo"){
-            steps{
                 git 'https://github.com/Sagar-Admane/test-repo.git'
             }
         }
 
-        stage("Run Scripts"){
-            steps{
-                echo "Running index.js"
+        stage('Run Script') {
+            steps {
+                echo 'Running index.js...'
                 sh 'node index.js'
             }
         }
