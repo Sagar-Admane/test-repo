@@ -2,7 +2,7 @@ pipeline {
     agent { label 'my-jenkins-agent' } // Your custom cloud agent
 
     environment {
-        DOCKER_HOST = 'tcp://172.22.0.2:2376' // 👈 Connect to Docker daemon via TCP
+        DOCKER_HOST = 'tcp://172.22.0.2:2375' // 👈 Connect to Docker daemon via TCP
         DOCKER_IMAGE = 'sagar4094/my-node-app' // Docker Hub image name
     }
 
