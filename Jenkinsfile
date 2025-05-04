@@ -1,9 +1,8 @@
 pipeline {
-    agent { label 'my-jenkins-agent' } // 👈 Use the label of your cloud agent here
+    agent { label 'my-jenkins-agent' }
 
     environment {
         DOCKER_IMAGE = 'sagar4094/my-node-app'
-        COMPOSE_FILE = 'docker-compose.yaml'
     }
 
     stages {
@@ -14,10 +13,10 @@ pipeline {
             }
         }
 
-        stage('Build Image with Compose') {
+        stage('Build Docker Image') {
             steps {
-                echo '🐳 Building Docker image...'
-                sh 'docker-compose -f $COMPOSE_FILE build'
+                echo '🐳 Building Docker image from Dockerfile...'
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
@@ -27,7 +26,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh """
                         echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
-                        docker tag my-node-app:latest $DOCKER_IMAGE:latest
+                        docker tag $DOCKER_IMAGE:latest $DOCKER_IMAGE:latest
                         docker push $DOCKER_IMAGE:latest
                     """
                 }
@@ -37,14 +36,15 @@ pipeline {
         stage('Stop Old Container') {
             steps {
                 echo '🛑 Stopping old container...'
-                sh 'docker-compose -f $COMPOSE_FILE down || true'
+                sh 'docker ps -q --filter "name=my-node-app" | xargs -r docker stop'
+                sh 'docker ps -aq --filter "name=my-node-app" | xargs -r docker rm'
             }
         }
 
         stage('Start New Container') {
             steps {
                 echo '🚀 Starting updated container...'
-                sh 'docker-compose -f $COMPOSE_FILE up -d'
+                sh 'docker run -d --name my-node-app -p 80:80 $DOCKER_IMAGE'
             }
         }
 
