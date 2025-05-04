@@ -1,8 +1,8 @@
 pipeline {
-    agent any
+    agent { label 'my-jenkins-agent' } // 👈 Use the label of your cloud agent here
 
     environment {
-        DOCKER_IMAGE = 'sagar4094/my-node-app' 
+        DOCKER_IMAGE = 'sagar4094/my-node-app'
         COMPOSE_FILE = 'docker-compose.yaml'
     }
 
@@ -23,7 +23,7 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                echo '📤 Logging in & pushing image...'
+                echo '📤 Pushing to Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh """
                         echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
