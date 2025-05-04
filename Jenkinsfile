@@ -2,7 +2,7 @@ pipeline{
     agent any
 
     environment{
-        DOCKER_IMAGE = 'my-node-app'
+        DOCKER_IMAGE = 'unix:///var/run/docker.sock'
     }
 
     stages{
