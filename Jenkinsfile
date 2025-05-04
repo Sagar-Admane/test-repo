@@ -1,46 +1,57 @@
-pipeline{
+pipeline {
     agent any
 
-    environment{
-        DOCKER_IMAGE = 'unix:///var/run/docker.sock'
+    environment {
+        DOCKER_IMAGE = 'sagar4094/my-node-app' 
+        COMPOSE_FILE = 'docker-compose.yaml'
     }
 
-    stages{
-        stage('Clone repo'){
-            steps{
+    stages {
+        stage('Clone Repo') {
+            steps {
+                echo '📥 Cloning repo...'
                 git 'https://github.com/Sagar-Admane/test-repo.git'
             }
         }
 
-        stage('Build docker image with docker compose'){
-            steps{
-                script{
-                    sh 'docker-compose build'
+        stage('Build Image with Compose') {
+            steps {
+                echo '🐳 Building Docker image...'
+                sh 'docker-compose -f $COMPOSE_FILE build'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                echo '📤 Logging in & pushing image...'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh """
+                        echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+                        docker tag my-node-app:latest $DOCKER_IMAGE:latest
+                        docker push $DOCKER_IMAGE:latest
+                    """
                 }
             }
         }
 
-        stage('Stop old container'){
-            steps{
-                script{
-                    sh 'docker-compose down'
-                }
+        stage('Stop Old Container') {
+            steps {
+                echo '🛑 Stopping old container...'
+                sh 'docker-compose -f $COMPOSE_FILE down || true'
             }
         }
 
-        stage('Start new container'){
-            steps{
-                script{
-                    sh 'docker-compose up -d'
-                }
+        stage('Start New Container') {
+            steps {
+                echo '🚀 Starting updated container...'
+                sh 'docker-compose -f $COMPOSE_FILE up -d'
             }
         }
 
-        stage('Clean docker images'){
-            steps{
-                script{
-                    sh 'docker image prune -f'
-                }
+        stage('Clean Up') {
+            steps {
+                echo '🧹 Cleaning unused images...'
+                sh 'docker image prune -f'
             }
         }
     }
